@@ -1,0 +1,48 @@
+{
+  "name": "next-tailwind",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "bad-words": "^4.0.0",
+    "exceljs": "^4.4.0",
+    "formik": "^2.4.6",
+    "framer-motion": "^12.4.0",
+    "googleapis": "^148.0.0",
+    "jquery": "^3.7.1",
+    "jspdf": "^2.5.2",
+    "next": "^15.1.7",
+    "nodemailer": "^6.10.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
+    "react-magnifier": "^3.0.4",
+    "react-slick": "^0.30.3",
+    "react-toastify": "^11.0.3",
+    "recharts": "^2.15.3",
+    "resend": "^4.1.2",
+    "sass": "^1.83.4",
+    "slick-carousel": "^1.8.1",
+    "swiper": "^11.2.1",
+    "xlsx": "^0.18.5",
+    "yup": "^1.6.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@typescript-eslint/eslint-plugin": "^8.22.0",
+    "@typescript-eslint/parser": "^8.22.0",
+    "eslint-config-next": "15.1.5",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.7.3"
+  },
+  "resolutions": {
+    "strip-ansi": "^6.0.1",
+    "string-width": "^4.2.0"
+  }
+}

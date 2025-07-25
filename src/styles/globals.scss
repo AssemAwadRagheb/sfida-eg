@@ -1,0 +1,105 @@
+// Fonts
+@font-face {
+  font-family: "Alexandria";
+  src: url("../../public/fonts/Alexandria-VariableFont_wght.ttf")
+    format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+// Define CSS variables for light mode
+:root {
+  --background-color: #ffffff;
+  --text-color: #201212;
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #166802;
+  --scrollbar-thumb-hover: #2f67e8;
+}
+
+// Define CSS variables for dark mode
+[data-theme="dark"] {
+  --background-color: #121212; // Dark background
+  --text-color: #e0e0e0; // Light text for better readability
+  --scrollbar-track: #2c2c2c; // Darker scrollbar track
+  --scrollbar-thumb: #555; // Lighter scrollbar thumb
+  --scrollbar-thumb-hover: #888; // Brighter scrollbar thumb on hover
+}
+
+body {
+  font-family: "Alexandria", sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease; // Smooth transition
+}
+
+.arabic-alex-family {
+  font-family: "Alexandria", sans-serif !important;
+}
+
+// Scroll bar
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+// containers
+.container-90 {
+  width: 90%;
+  margin: 0 auto;
+}
+
+// Quiz color
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animatedBackground {
+  background: linear-gradient(
+    45deg,
+    #ff9a9e,
+    #fad0c4,
+    #a1c4fd,
+    #c2e9fb,
+    #ff9a9e
+  );
+  background-size: 300% 300%; /* Increase size for smooth transition */
+  animation: gradientShift 10s ease infinite; /* Adjust duration for speed */
+}
+
+//
+.quiz-container {
+  background: linear-gradient(to bottom, #f3e8ff, #e0e7ff);
+}
+
+.perfume-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  }
+}
