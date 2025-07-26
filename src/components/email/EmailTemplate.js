@@ -2,31 +2,11 @@ import { cities } from "@/data/geo/geo";
 import React from "react";
 
 const EmailTemplate = ({ orderDetails, isAdmin = false }) => {
-  const imageUrl = "https://ibb.co/mr8KKcnX";
-
-  // Get the default delivery cost for the selected city
-  const selectedCity = cities.find(
-    (c) => +c.id === +orderDetails.clientInfo.city.id
-  );
-
   // Determine shipping cost based on total
   const isSpecialShippingCost =
     orderDetails.preTotalBeforeDiscount === 250 ||
     orderDetails.preTotalBeforeDiscount === 350 ||
     orderDetails.preTotalBeforeDiscount === 450;
-
-  // Calculate shipping cost display
-  const shippingCostDisplay = isSpecialShippingCost ? (
-    <>
-      <span>50.00 ج.م</span>{" "}
-      <span style={{ textDecoration: "line-through" }}>100.00 ج.م</span>
-    </>
-  ) : (
-    <>
-      <span style={{ color: "green" }}>مجاني</span>{" "}
-      <span style={{ textDecoration: "line-through" }}>100.00 ج.م</span>
-    </>
-  );
 
   // Calculate final total for display in email
   const finalTotalForEmail =
@@ -37,181 +17,183 @@ const EmailTemplate = ({ orderDetails, isAdmin = false }) => {
   return (
     <div
       style={{
-        fontFamily: "Arial, sans-serif",
-        padding: "20px",
-        border: "1px solid #ddd",
-        borderRadius: "5px",
-        backgroundColor: "#f9fafb",
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        padding: "30px",
+        border: "1px solid #E2E8F0",
+        borderRadius: "12px",
+        backgroundColor: "#FFFFFF",
+        maxWidth: "600px",
+        margin: "20px auto",
+        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
+        direction: "rtl",
+        textAlign: "right",
       }}
-      dir="rtl"
     >
       <h1
         style={{
-          color: "#4A5568",
-          fontSize: "24px",
-          fontWeight: "600",
-          marginBottom: "24px",
+          color: "#2D3748",
+          fontSize: "28px",
+          fontWeight: "700",
+          marginBottom: "30px",
+          textAlign: "center",
+          borderBottom: "2px solid #4299E1",
+          paddingBottom: "10px",
         }}
       >
-        تفاصيل الطلب
+        {isAdmin ? "طلب جديد - تفاصيل الطلب" : "تم استلام الطلب، شكرًا لشرائك من سفيدا ❤️"}
       </h1>
-      {/* Image for the order */}
-      <img
-        src="https://ibb.co/mr8KKcnX"
-        alt="Sfida Logo"
-        style={{
-          width: "10rem",
-          height: "10rem",
-          marginBottom: "1rem",
-          borderRadius: "50%",
-        }}
-      />
+
       {/* Order ID and Date */}
-      <div style={{ marginBottom: "24px" }}>
-        <p style={{ fontSize: "18px", fontWeight: "600", marginBottom: "8px" }}>
-          رقم الطلب: <br />
-          <span style={{ fontWeight: "400" }}>{orderDetails.orderId}</span>
+      <div
+        style={{
+          marginBottom: "25px",
+          backgroundColor: "#F7FAFC",
+          padding: "15px 20px",
+          borderRadius: "8px",
+          borderLeft: "5px solid #4299E1",
+        }}
+      >
+        <p style={{ fontSize: "18px", fontWeight: "600", marginBottom: "10px", color: "#2D3748" }}>
+          رقم الطلب:{" "}
+          <span style={{ fontWeight: "700", color: "#4299E1" }}>{orderDetails.orderId}</span>
         </p>
         <p style={{ fontSize: "16px", color: "#4A5568" }}>
           تاريخ الطلب:{" "}
-          {new Date(orderDetails.createdAt).toLocaleDateString("ar-EG")}
+          <span style={{ fontWeight: "500" }}>
+            {new Date(orderDetails.createdAt).toLocaleDateString("ar-EG", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
         </p>
       </div>
 
       {/* Client Info */}
-      <div style={{ marginBottom: "24px" }}>
+      <div
+        style={{
+          marginBottom: "25px",
+          padding: "20px",
+          backgroundColor: "#F7FAFC",
+          borderRadius: "8px",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+        }}
+      >
         <h2
           style={{
             color: "#2D3748",
-            fontSize: "20px",
-            fontWeight: "600",
-            marginBottom: "16px",
+            fontSize: "22px",
+            fontWeight: "700",
+            marginBottom: "18px",
+            borderBottom: "1px dashed #CBD5E0",
+            paddingBottom: "10px",
           }}
         >
           معلومات العميل
         </h2>
-        <div style={{ display: "grid", gap: "8px" }}>
+        <div style={{ display: "grid", gap: "10px" }}>
           <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            <span style={{ fontWeight: "600" }}>الاسم:</span>{" "}
+            <span style={{ fontWeight: "600", color: "#2D3748" }}>الاسم:</span>{" "}
             {orderDetails.clientInfo.name}
           </p>
           <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            <span style={{ fontWeight: "600" }}>البريد الإلكتروني:</span>{" "}
+            <span style={{ fontWeight: "600", color: "#2D3748" }}>البريد الإلكتروني:</span>{" "}
             {orderDetails.clientInfo.email}
           </p>
           <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            <span style={{ fontWeight: "600" }}>رقم الهاتف:</span>{" "}
+            <span style={{ fontWeight: "600", color: "#2D3748" }}>رقم الهاتف:</span>{" "}
             {orderDetails.clientInfo.phone}
           </p>
           <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            <span style={{ fontWeight: "600" }}>البلد:</span>{" "}
+            <span style={{ fontWeight: "600", color: "#2D3748" }}>البلد:</span>{" "}
             {orderDetails.clientInfo.country.nameAr}
           </p>
           <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            <span style={{ fontWeight: "600" }}>المحافظة:</span>{" "}
+            <span style={{ fontWeight: "600", color: "#2D3748" }}>المحافظة:</span>{" "}
             {orderDetails.clientInfo.governorate.nameAr}
           </p>
           <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            <span style={{ fontWeight: "600" }}>المدينة:</span>{" "}
+            <span style={{ fontWeight: "600", color: "#2D3748" }}>المدينة:</span>{" "}
             {orderDetails.clientInfo.city.nameAr}
           </p>
           <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            <span style={{ fontWeight: "600" }}>الحي:</span>{" "}
+            <span style={{ fontWeight: "600", color: "#2D3748" }}>الحي:</span>{" "}
             {orderDetails.clientInfo.district}
           </p>
           <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            <span style={{ fontWeight: "600" }}>العنوان التفصيلي:</span>{" "}
+            <span style={{ fontWeight: "600", color: "#2D3748" }}>العنوان التفصيلي:</span>{" "}
             {orderDetails.clientInfo.detailedAddress}
           </p>
         </div>
       </div>
 
       {/* Order Items */}
-      <div style={{ marginBottom: "24px" }}>
+      <div
+        style={{
+          marginBottom: "25px",
+          padding: "20px",
+          backgroundColor: "#F7FAFC",
+          borderRadius: "8px",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+        }}
+      >
         <h2
           style={{
             color: "#2D3748",
-            fontSize: "20px",
-            fontWeight: "600",
-            marginBottom: "16px",
+            fontSize: "22px",
+            fontWeight: "700",
+            marginBottom: "18px",
+            borderBottom: "1px dashed #CBD5E0",
+            paddingBottom: "10px",
           }}
         >
           تفاصيل المنتجات
         </h2>
-        <div style={{ display: "grid", gap: "16px" }}>
+        <div style={{ display: "grid", gap: "15px" }}>
           {orderDetails.cartItems.map((item, index) => (
             <div
               key={index}
               style={{
-                borderTop: "1px solid #e2e8f0",
-                paddingBottom: "16px",
+                borderBottom: "1px solid #E2E8F0",
+                paddingBottom: "15px",
+                paddingTop: "5px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
-              <p
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  marginBottom: "8px",
-                }}
-              >
-                {item.titleAr}
-              </p>
-              <p style={{ fontSize: "14px", color: "#718096" }}>
-                السعر: {item.selectedSize.price} ج.م
+              <div>
+                <p
+                  style={{
+                    fontSize: "17px",
+                    fontWeight: "600",
+                    marginBottom: "5px",
+                    color: "#2D3748",
+                  }}
+                >
+                  {item.titleAr}
+                </p>
+              </div>
+              <p style={{ fontSize: "16px", fontWeight: "600", color: "#4299E1" }}>
+                {item.selectedSize.price} ج.م
               </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Promocode Details */}
-      {orderDetails.promocode && (
-        <div style={{ marginBottom: "24px" }}>
-          <h2
-            style={{
-              color: "#2D3748",
-              fontSize: "20px",
-              fontWeight: "600",
-              marginBottom: "16px",
-            }}
-          >
-            تفاصيل كود الخصم
-          </h2>
-          <div style={{ display: "grid", gap: "8px" }}>
-            <p style={{ fontSize: "16px", color: "#4A5568" }}>
-              <span style={{ fontWeight: "600" }}>الكود:</span>{" "}
-              {orderDetails.promocode.code}
-            </p>
-            <p style={{ fontSize: "16px", color: "#4A5568" }}>
-              <span style={{ fontWeight: "600" }}>نسبة الخصم:</span>{" "}
-              {orderDetails.promocode.value}%
-            </p>
-            {isAdmin && (
-              <>
-                <p style={{ fontSize: "16px", color: "#4A5568" }}>
-                  <span style={{ fontWeight: "600" }}>الحد الأقصى للخصم:</span>{" "}
-                  {orderDetails.promocode.maxDiscountPercentage}%
-                </p>
-                <p style={{ fontSize: "16px", color: "#4A5568" }}>
-                  <span style={{ fontWeight: "600" }}>الحد الأدنى للطلب:</span>{" "}
-                  {orderDetails.promocode.minOrderAmount} ج.م
-                </p>
-                <p style={{ fontSize: "16px", color: "#4A5568" }}>
-                  <span style={{ fontWeight: "600" }}>المقدم:</span>{" "}
-                  {orderDetails.promocode.provider}
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Total */}
+      {/* Total Section */}
       <div
         style={{
-          borderTop: "1px solid #e2e8f0",
-          paddingTop: "16px",
-          marginBottom: "24px",
+          borderTop: "2px solid #4299E1",
+          paddingTop: "20px",
+          marginBottom: "25px",
+          backgroundColor: "#EBF8FF",
+          padding: "20px",
+          borderRadius: "8px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
         }}
       >
         <table
@@ -223,13 +205,13 @@ const EmailTemplate = ({ orderDetails, isAdmin = false }) => {
           <tbody>
             {/* Order Total */}
             <tr>
-              <td style={{ padding: "4px 0" }}>
-                <p style={{ fontSize: "16px", fontWeight: "600", margin: 0 }}>
+              <td style={{ padding: "8px 0" }}>
+                <p style={{ fontSize: "17px", fontWeight: "600", margin: 0, color: "#2D3748" }}>
                   سعر الطلب
                 </p>
               </td>
-              <td style={{ padding: "4px 0", textAlign: "right" }}>
-                <p style={{ fontSize: "16px", margin: 0 }}>
+              <td style={{ padding: "8px 0", textAlign: "left" }}>
+                <p style={{ fontSize: "17px", margin: 0, color: "#2D3748" }}>
                   {orderDetails.preTotalBeforeDiscount.toFixed(2)} ج.م
                 </p>
               </td>
@@ -240,13 +222,13 @@ const EmailTemplate = ({ orderDetails, isAdmin = false }) => {
               (offer) => offer.type === "discount"
             ) && (
               <tr>
-                <td style={{ padding: "4px 0" }}>
-                  <p style={{ fontSize: "16px", fontWeight: "600", margin: 0 }}>
+                <td style={{ padding: "8px 0" }}>
+                  <p style={{ fontSize: "17px", fontWeight: "600", margin: 0, color: "#2D3748" }}>
                     خصم العروض
                   </p>
                 </td>
-                <td style={{ padding: "4px 0", textAlign: "right" }}>
-                  <p style={{ fontSize: "16px", margin: 0 }}>
+                <td style={{ padding: "8px 0", textAlign: "left" }}>
+                  <p style={{ fontSize: "17px", margin: 0, color: "#E53E3E" }}>
                     -{" "}
                     {(
                       orderDetails.discount -
@@ -265,13 +247,13 @@ const EmailTemplate = ({ orderDetails, isAdmin = false }) => {
             {/* Discount from Promocode */}
             {orderDetails.promocode && (
               <tr>
-                <td style={{ padding: "4px 0" }}>
-                  <p style={{ fontSize: "16px", fontWeight: "600", margin: 0 }}>
+                <td style={{ padding: "8px 0" }}>
+                  <p style={{ fontSize: "17px", fontWeight: "600", margin: 0, color: "#2D3748" }}>
                     كود الخصم ({orderDetails.promocode.value}%)
                   </p>
                 </td>
-                <td style={{ padding: "4px 0", textAlign: "right" }}>
-                  <p style={{ fontSize: "16px", margin: 0 }}>
+                <td style={{ padding: "8px 0", textAlign: "left" }}>
+                  <p style={{ fontSize: "17px", margin: 0, color: "#E53E3E" }}>
                     -{" "}
                     {(
                       (orderDetails.preTotalBeforeDiscount *
@@ -286,14 +268,24 @@ const EmailTemplate = ({ orderDetails, isAdmin = false }) => {
 
             {/* Shipping Cost */}
             <tr>
-              <td style={{ padding: "4px 0" }}>
-                <p style={{ fontSize: "16px", fontWeight: "600", margin: 0 }}>
+              <td style={{ padding: "8px 0" }}>
+                <p style={{ fontSize: "17px", fontWeight: "600", margin: 0, color: "#2D3748" }}>
                   رسوم الشحن
                 </p>
               </td>
-              <td style={{ padding: "4px 0", textAlign: "right" }}>
-                <p style={{ fontSize: "16px", margin: 0 }}>
-                  {shippingCostDisplay}
+              <td style={{ padding: "8px 0", textAlign: "left" }}>
+                <p style={{ fontSize: "17px", margin: 0 }}>
+                  {isSpecialShippingCost ? (
+                    <>
+                      <span style={{ color: "#E53E3E", fontWeight: "bold" }}>50.00 ج.م</span>{" "}
+                      <span style={{ textDecoration: "line-through", color: "#A0AEC0" }}>100.00 ج.م</span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ color: "#38A169", fontWeight: "bold" }}>مجاني</span>{" "}
+                      <span style={{ textDecoration: "line-through", color: "#A0AEC0" }}>100.00 ج.م</span>
+                    </>
+                  )}
                 </p>
               </td>
             </tr>
@@ -302,22 +294,22 @@ const EmailTemplate = ({ orderDetails, isAdmin = false }) => {
             <tr>
               <td
                 style={{
-                  padding: "8px 0",
-                  borderTop: "1px solid #e2e8f0",
+                  padding: "12px 0",
+                  borderTop: "2px solid #A0AEC0",
                 }}
               >
-                <p style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}>
-                  الإجمالي
+                <p style={{ fontSize: "20px", fontWeight: "700", margin: 0, color: "#2D3748" }}>
+                  الإجمالي النهائي
                 </p>
               </td>
               <td
                 style={{
-                  padding: "8px 0",
-                  borderTop: "1px solid #e2e8f0",
-                  textAlign: "right",
+                  padding: "12px 0",
+                  borderTop: "2px solid #A0AEC0",
+                  textAlign: "left",
                 }}
               >
-                <p style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}>
+                <p style={{ fontSize: "20px", fontWeight: "700", margin: 0, color: "#4299E1" }}>
                   {finalTotalForEmail.toFixed(2)} ج.م
                 </p>
               </td>
@@ -326,128 +318,112 @@ const EmailTemplate = ({ orderDetails, isAdmin = false }) => {
         </table>
       </div>
 
-      {/* Display Lucky Draw Message */}
-      {orderDetails.luckyDraw && (
-        <div
-          style={{
-            backgroundColor: "#f0fdf4",
-            padding: "16px",
-            borderRadius: "8px",
-            marginBottom: "24px",
-          }}
-        >
-          <h2
-            style={{ fontSize: "18px", fontWeight: "600", marginBottom: "8px" }}
-          >
-            مبروك! لقد تأهلت للسحب!
-          </h2>
-          <p style={{ fontSize: "14px", color: "#4A5568" }}>
-            {orderDetails.luckyDraw === "Entered Lucky Draw (500+ L.E.)"
-              ? "لقد تأهلت لسحب الجوائز الخاصة للطلبات فوق 500 جنيه. تواصل مع خدمة العملاء لمعرفة الجوائز."
-              : "لقد تأهلت لسحب الجوائز المميزة للطلبات فوق 800 جنيه. تواصل مع خدمة العملاء لمعرفة الجوائز."}
-          </p>
-        </div>
-      )}
-
-      {/* Admin Notes */}
-      {isAdmin && (
-        <div style={{ marginTop: "24px" }}>
-          <h2
-            style={{
-              color: "#2D3748",
-              fontSize: "20px",
-              fontWeight: "600",
-              marginBottom: "16px",
-            }}
-          >
-            معلومات إضافية للإدارة
-          </h2>
-          <p style={{ fontSize: "16px", color: "#4A5568" }}>
-            ملاحظات: {orderDetails.notes || "لا توجد ملاحظات"}
-          </p>
-          <br />
-          <h2
-            style={{
-              color: "#2D3748",
-              fontSize: "20px",
-              fontWeight: "600",
-              marginBottom: "16px",
-            }}
-          >
-            رابط الواتسآب
-          </h2>
-          <a
-            href={`https://wa.me/${
-              orderDetails.clientInfo.phone.startsWith("+20")
-                ? orderDetails.clientInfo.phone
-                : "+20" + orderDetails.clientInfo.phone
-            }`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-200 block py-2"
-          >
-            تواصل مع العميل مباشرة
-          </a>
-        </div>
-      )}
-
-      {/* Total Cost for Admin */}
+      {/* Admin Specific Sections */}
       {isAdmin && (
         <>
-          {orderDetails.cartItems.map((item, index) => (
-            <div
-              key={index}
+          {/* Excel File Download */}
+          <div
+            style={{
+              marginTop: "30px",
+              padding: "20px",
+              backgroundColor: "#F0FDF4",
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #86EFAC",
+            }}
+          >
+            <h2
               style={{
-                borderTop: "1px solid #e2e8f0",
-                paddingBottom: "16px",
+                color: "#2D3748",
+                fontSize: "22px",
+                fontWeight: "700",
+                marginBottom: "18px",
+                borderBottom: "1px dashed #86EFAC",
+                paddingBottom: "10px",
               }}
             >
-              <p
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  marginBottom: "8px",
-                }}
-              >
-                {item.titleAr}
-              </p>
-              {isAdmin && (
-                <p style={{ fontSize: "14px", color: "#718096" }}>
-                  التكلفة: {item.selectedSize.cost} ج.م
-                </p>
-              )}
-            </div>
-          ))}
-          <span>--------</span>
-          <p style={{ fontSize: "14px", color: "#718096" }}>
-            التكلفة:{" "}
-            {orderDetails.cartItems.reduce(
-              (total, item) => total + item.selectedSize.cost,
-              0
-            )}{" "}
-            ج.م
-          </p>
+              ملف Excel لجميع الطلبات
+            </h2>
+            <p style={{ fontSize: "16px", color: "#4A5568", marginBottom: "15px" }}>
+              تم تحديث ملف Excel ببيانات هذا الطلب. يمكنك تنزيل الملف المرفق بهذا البريد.
+            </p>
+            <p style={{ fontSize: "14px", color: "#64748B", marginTop: "10px" }}>
+              يحتوي الملف المرفق على جميع الطلبات السابقة والحالية، مع تفاصيل كل طلب.
+            </p>
+          </div>
+
+          {/* WhatsApp Link */}
+          <div
+            style={{
+              marginTop: "30px",
+              padding: "20px",
+              backgroundColor: "#FEFCE8",
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #FBD38D",
+            }}
+          >
+            <h2
+              style={{
+                color: "#2D3748",
+                fontSize: "22px",
+                fontWeight: "700",
+                marginBottom: "18px",
+                borderBottom: "1px dashed #FBD38D",
+                paddingBottom: "10px",
+              }}
+            >
+              رابط الواتسآب للتواصل مع العميل
+            </h2>
+            <a
+              href={`https://wa.me/${
+                orderDetails.clientInfo.phone.startsWith("+20")
+                  ? orderDetails.clientInfo.phone
+                  : "+20" + orderDetails.clientInfo.phone
+              }`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block",
+                backgroundColor: "#25D366",
+                color: "#FFFFFF",
+                padding: "12px 25px",
+                borderRadius: "8px",
+                textDecoration: "none",
+                fontWeight: "bold",
+                fontSize: "16px",
+                transition: "background-color 0.3s ease",
+                boxShadow: "0 4px 10px rgba(37, 211, 102, 0.3)",
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#1DA851")}
+              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#25D366")}
+            >
+              تواصل مع العميل مباشرة عبر الواتساب
+            </a>
+          </div>
         </>
       )}
 
-      {/* Delivery Information */}
-      <p
-        style={{
-          fontSize: "14px",
-          color: "#718096",
-          marginBottom: "24px",
-          borderBottom: "1px solid #e2e8f0",
-          paddingBottom: "16px",
-        }}
-      >
-        يتم توضيح توقيت وطريقة استلام الطلب من خلال خدمة العملاء، لا يزيد وقت
-        استلام الطلب عن 1-2 يوم عمل من وقت تأكيد الطلب.
-      </p>
-
       {/* Footer */}
-      <footer style={{ marginTop: "20px", fontSize: "16px", color: "#718096" }}>
-        <p>سوف يتم التواصل معكم في أسرع وقت ممكن!</p>
-      </footer>
+      {!isAdmin && (
+        <footer
+          style={{
+            marginTop: "20px",
+            fontSize: "16px",
+            color: "#718096",
+            textAlign: "center",
+            paddingTop: "15px",
+            borderTop: "1px solid #E2E8F0",
+          }}
+        >
+          <p style={{ margin: "0", fontWeight: "600", color: "#2D3748" }}>
+            شكراً لثقتكم بنا! سوف يتم التواصل معكم في أسرع وقت ممكن.
+          </p>
+          <p style={{ margin: "10px 0 0", fontSize: "14px", color: "#A0AEC0" }}>
+            فريق سفيدا
+          </p>
+        </footer>
+      )}
     </div>
   );
 };
