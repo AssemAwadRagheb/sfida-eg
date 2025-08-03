@@ -56,8 +56,12 @@ export async function generateMetadata({ params }) {
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   
-  // Enhanced and Cleaned Data Layer Structure
+  // Fixed: استبدال document.title ب title من generateMetadata
+  const pageTitle = "Sfida - " + (pathname?.split('/').filter(Boolean).pop() || "Home");
+
+  // Fixed: تحسين دالة pageType لتجنب الأخطاء مع pathname غير معرف
   const pageType = () => {
+    if (!pathname) return 'home';
     if (pathname === '/') return 'home';
     if (pathname.includes('/product/')) return 'product';
     if (pathname.includes('/category/')) return 'category';
@@ -66,31 +70,32 @@ export default function RootLayout({ children }) {
     return 'other';
   };
 
+  // Fixed: إنشاء sessionId بشكل آمن دون استخدام window في SSR
+  const generateSessionId = () => {
+    return Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
+  };
+
   const dataLayer = {
     event: "pageView",
     page: {
-      title: "Sfida - " + (pathname?.split('/').pop() || "Home"),
+      title: pageTitle,
       path: pathname || "/",
       type: pageType(),
       language: "ar",
       country: "EG",
-      hostname: typeof window !== 'undefined' ? window.location.hostname : "sfida-eg.vercel.app",
-      url: typeof window !== 'undefined' ? window.location.href : "https://sfida-eg.vercel.app" + pathname,
-      referrer: typeof window !== 'undefined' ? document.referrer : "",
+      hostname: "sfida-eg.vercel.app", // Fixed: تجنب استخدام window في SSR
+      url: `https://sfida-eg.vercel.app${pathname || '/'}`, // Fixed: بناء URL بدون window
+      referrer: "", // سيتم تحديثه من خلال سكربت العميل
     },
     user: {
       id: "anonymous",
       type: "guest",
       isLoggedIn: false,
-      sessionId: typeof window !== 'undefined' ? 
-        (sessionStorage.getItem('sessionId') || 
-         Math.random().toString(36).substring(2, 15) + Date.now().toString(36)) : 
-        Math.random().toString(36).substring(2, 15),
+      sessionId: generateSessionId(), // Fixed: استخدام دالة آمنة لتوليد sessionId
       device: {
-        type: typeof window !== 'undefined' ? 
-          (window.innerWidth < 768 ? "mobile" : 
-           window.innerWidth < 1024 ? "tablet" : "desktop") : "unknown",
-        browser: typeof window !== 'undefined' ? navigator.userAgent : "unknown",
+        type: "unknown", // سيتم تحديثه من خلال سكربت العميل
+        browser: "unknown", // سيتم تحديثه من خلال سكربت العميل
       },
     },
     site: {
@@ -107,22 +112,60 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ar">
       <head>
-        {/* Clean and Standardized Data Layer for GTM */}
+        {/* Fixed: تحسين سكربت dataLayer ليتعامل مع تحديثات العميل */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
-              window.dataLayer.push(${JSON.stringify(dataLayer)});
+              window.__INITIAL_DATA_LAYER__ = ${JSON.stringify(dataLayer)};
+              window.dataLayer.push(window.__INITIAL_DATA_LAYER__);
               
-              // Store session ID for future page views
-              if(typeof sessionStorage !== 'undefined') {
-                sessionStorage.setItem('sessionId', '${dataLayer.user.sessionId}');
+              // تحديث البيانات الديناميكية بعد تحميل الصفحة
+              function updateDataLayer() {
+                const updatedData = {
+                  page: {
+                    ...window.__INITIAL_DATA_LAYER__.page,
+                    hostname: window.location.hostname,
+                    url: window.location.href,
+                    referrer: document.referrer,
+                  },
+                  user: {
+                    ...window.__INITIAL_DATA_LAYER__.user,
+                    device: {
+                      type: window.innerWidth < 768 ? "mobile" : 
+                           window.innerWidth < 1024 ? "tablet" : "desktop",
+                      browser: navigator.userAgent,
+                    }
+                  }
+                };
+                
+                // تخزين sessionId في sessionStorage
+                try {
+                  if (typeof sessionStorage !== 'undefined') {
+                    if (!sessionStorage.getItem('sessionId')) {
+                      sessionStorage.setItem('sessionId', updatedData.user.sessionId);
+                    } else {
+                      updatedData.user.sessionId = sessionStorage.getItem('sessionId');
+                    }
+                  }
+                } catch (e) {
+                  console.error('Error accessing sessionStorage:', e);
+                }
+                
+                window.dataLayer.push(updatedData);
+              }
+              
+              // تشغيل التحديث عند تحميل الصفحة
+              if (document.readyState === 'complete') {
+                updateDataLayer();
+              } else {
+                window.addEventListener('load', updateDataLayer);
               }
             `,
           }}
         />
 
-        {/* Google Tag Manager - Standard Implementation */}
+        {/* Google Tag Manager */}
         <Script
           id="gtm-script"
           strategy="afterInteractive"
@@ -137,7 +180,7 @@ export default function RootLayout({ children }) {
           }}
         />
 
-        {/* Meta Pixel - Enhanced Standard Implementation */}
+        {/* Meta Pixel */}
         <Script
           id="fb-pixel"
           strategy="afterInteractive"
@@ -153,14 +196,7 @@ export default function RootLayout({ children }) {
               'https://connect.facebook.net/en_US/fbevents.js');
               
               fbq('init', '667476426454833');
-              fbq('track', 'PageView', {
-                content_name: ${JSON.stringify(dataLayer.page.title)},
-                content_category: ${JSON.stringify(dataLayer.page.type)},
-                content_ids: [],
-                content_type: 'product',
-                value: 0,
-                currency: 'EGP'
-              });
+              fbq('track', 'PageView');
             `,
           }}
         />
@@ -183,7 +219,29 @@ export default function RootLayout({ children }) {
                 chatbotId: '-3UT4U5z4KZOGu7TF8rxt',
                 baseUrl: 'https://www.chatbase.co'
               };
-              (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="-3UT4U5z4KZOGu7TF8rxt";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+              (function(){
+                if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+                  window.chatbase=(...args)=>{
+                    if(!window.chatbase.q){window.chatbase.q=[]}
+                    window.chatbase.q.push(args)
+                  };
+                  window.chatbase=new Proxy(window.chatbase,{
+                    get(target,prop){
+                      if(prop==="q"){return target.q}
+                      return(...args)=>target(prop,...args)
+                    }
+                  })
+                }
+                const onLoad=function(){
+                  const script=document.createElement("script");
+                  script.src="https://www.chatbase.co/embed.min.js";
+                  script.id="-3UT4U5z4KZOGu7TF8rxt";
+                  script.setAttribute('defer', '');
+                  document.body.appendChild(script)
+                };
+                if(document.readyState==="complete"){onLoad()}
+                else{window.addEventListener("load",onLoad)}
+              })();
             `,
           }}
         />
@@ -192,7 +250,6 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
         dir="rtl"
       >
-        {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXX"
