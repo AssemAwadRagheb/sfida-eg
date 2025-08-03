@@ -53,6 +53,21 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ar">
       <head>
+        {/* Data Layer */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({
+                'event': 'pageView',
+                'pageTitle': document.title,
+                'pagePath': window.location.pathname,
+                'pageCategory': 'Home' // يمكنك تعديل هذه القيمة حسب الحاجة
+              });
+            `,
+          }}
+        />
+
         {/* Meta Pixel Code */}
         <Script
           id="fb-pixel"
