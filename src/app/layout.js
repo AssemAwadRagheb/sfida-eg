@@ -18,8 +18,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteData = {
-  title: "Sfida",
+const trackingConfig = {
   fbPixelId: "667476426454833",
   currency: "EGP"
 };
@@ -34,7 +33,7 @@ const FacebookPixel = () => {
   return (
     <>
       <Script
-        id="fb-pixel-script"
+        id="fb-pixel-core"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
@@ -55,33 +54,43 @@ const FacebookPixel = () => {
               s.parentNode.insertBefore(t,s)
             }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
             
-            fbq('init', '${siteData.fbPixelId}');
+            fbq('init', '${trackingConfig.fbPixelId}');
             fbq('track', 'PageView');
             
-            // تخزين الأحداث في localStorage عند فقدانها
-            window._fbEventsQueue = JSON.parse(localStorage.getItem('_fbEventsQueue') || '[]');
-            
-            // دالة لإرسال الأحداث مع التخزين الاحتياطي
-            window.trackFbEvent = function(eventName, params = {}) {
-              try {
-                fbq('track', eventName, params);
-                console.log('FB Event Sent:', eventName, params);
-              } catch (e) {
-                // إذا فشل الإرسال، نخزن الحدث للتحميل لاحقاً
-                window._fbEventsQueue.push({eventName, params});
-                localStorage.setItem('_fbEventsQueue', JSON.stringify(window._fbEventsQueue));
-                console.log('FB Event Queued:', eventName, params);
+            // نظام متقدم لتخزين الأحداث
+            window._fbEventManager = {
+              queue: JSON.parse(sessionStorage.getItem('fb_pixel_queue') || '[]'),
+              
+              pushEvent: function(eventName, eventParams) {
+                this.queue.push({eventName, eventParams});
+                sessionStorage.setItem('fb_pixel_queue', JSON.stringify(this.queue));
+                this.processQueue();
+              },
+              
+              processQueue: function() {
+                if (typeof fbq !== 'function') return;
+                
+                this.queue.forEach((event, index) => {
+                  try {
+                    fbq('track', event.eventName, event.eventParams);
+                    this.queue.splice(index, 1);
+                    sessionStorage.setItem('fb_pixel_queue', JSON.stringify(this.queue));
+                  } catch (e) {
+                    console.error('FB Pixel Error:', e);
+                  }
+                });
+              },
+              
+              clearQueue: function() {
+                this.queue = [];
+                sessionStorage.removeItem('fb_pixel_queue');
               }
             };
             
-            // إرسال الأحداث المخزنة عند تحميل الصفحة
+            // معالجة الأحداث المخزنة عند التحميل
             window.addEventListener('load', function() {
-              if (window._fbEventsQueue && window._fbEventsQueue.length > 0) {
-                window._fbEventsQueue.forEach(event => {
-                  fbq('track', event.eventName, event.params);
-                });
-                localStorage.removeItem('_fbEventsQueue');
-                window._fbEventsQueue = [];
+              if (window._fbEventManager) {
+                window._fbEventManager.processQueue();
               }
             });
           `
@@ -92,7 +101,7 @@ const FacebookPixel = () => {
           height="1"
           width="1"
           style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${siteData.fbPixelId}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${trackingConfig.fbPixelId}&ev=PageView&noscript=1`}
         />
       </noscript>
     </>
@@ -118,94 +127,189 @@ export default function RootLayout({ children }) {
         <SmallFooter />
         <ToastContainer />
         
-        {/* سكريبت إضافي لإدارة الأحداث */}
         <Script
-          id="event-tracking"
+          id="fb-pixel-events-handler"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              // دالة لتفعيل حدث إضافة للسلة
+              // ===== نظام تتبع الأحداث الرئيسي =====
+              
+              // تتبع إضافة منتج للسلة
               function trackAddToCart(product) {
                 const eventData = {
                   content_ids: [product.id],
                   content_name: product.name,
                   content_type: 'product',
                   value: product.price,
-                  currency: '${siteData.currency}',
+                  currency: '${trackingConfig.currency}',
                   quantity: product.quantity || 1
                 };
-                window.trackFbEvent('AddToCart', eventData);
+                
+                if (window._fbEventManager) {
+                  window._fbEventManager.pushEvent('AddToCart', eventData);
+                }
+                
+                // تحديث بيانات السلة في الجلسة
+                updateCartInSession(product);
               }
               
-              // دالة لتفعيل حدث الشراء
+              // تتبع بدء عملية الدفع
+              function trackInitiateCheckout(cart) {
+                const eventData = {
+                  content_ids: cart.items.map(item => item.id),
+                  content_type: 'product',
+                  value: cart.total,
+                  currency: '${trackingConfig.currency}',
+                  num_items: cart.items.reduce((total, item) => total + item.quantity, 0)
+                };
+                
+                if (window._fbEventManager) {
+                  window._fbEventManager.pushEvent('InitiateCheckout', eventData);
+                }
+              }
+              
+              // تتبع إتمام الشراء
               function trackPurchase(order) {
                 const eventData = {
                   value: order.total,
-                  currency: '${siteData.currency}',
+                  currency: '${trackingConfig.currency}',
                   contents: order.products.map(p => ({
                     id: p.id,
                     quantity: p.quantity
                   })),
-                  content_type: 'product'
+                  content_type: 'product',
+                  order_id: order.id || 'ORDER_' + Date.now()
                 };
-                window.trackFbEvent('Purchase', eventData);
+                
+                if (window._fbEventManager) {
+                  window._fbEventManager.pushEvent('Purchase', eventData);
+                  window._fbEventManager.clearQueue();
+                }
+                
+                // مسح بيانات السلة بعد الشراء
+                sessionStorage.removeItem('current_cart');
               }
               
-              // دالة لتفعيل حدث مشاهدة المنتج
-              function trackViewProduct(product) {
+              // تتبع مشاهدة المنتج
+              function trackViewContent(product) {
                 const eventData = {
                   content_ids: [product.id],
                   content_name: product.name,
                   content_type: 'product',
                   value: product.price,
-                  currency: '${siteData.currency}'
+                  currency: '${trackingConfig.currency}'
                 };
-                window.trackFbEvent('ViewContent', eventData);
+                
+                if (window._fbEventManager) {
+                  window._fbEventManager.pushEvent('ViewContent', eventData);
+                }
               }
               
-              // تتبع الأحداث عند تحميل الصفحة
-              document.addEventListener('DOMContentLoaded', function() {
-                // تتبع مشاهدة المنتج
-                if(window.location.pathname.includes('/product/')) {
-                  const productData = getProductData();
-                  if(productData) trackViewProduct(productData);
+              // ===== دوال مساعدة =====
+              
+              // تحديث بيانات السلة في الجلسة
+              function updateCartInSession(product) {
+                const currentCart = JSON.parse(sessionStorage.getItem('current_cart') || '{"items":[],"total":0}');
+                
+                // البحث عن المنتج في السلة
+                const existingItem = currentCart.items.find(item => item.id === product.id);
+                
+                if (existingItem) {
+                  existingItem.quantity += product.quantity || 1;
+                } else {
+                  currentCart.items.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: product.quantity || 1
+                  });
                 }
                 
-                // تتبع إتمام الشراء
-                if(window.location.pathname.includes('/order-confirmation')) {
-                  const orderData = getOrderData();
-                  if(orderData) trackPurchase(orderData);
-                }
-              });
+                // حساب الإجمالي
+                currentCart.total = currentCart.items.reduce(
+                  (sum, item) => sum + (item.price * item.quantity), 0
+                );
+                
+                sessionStorage.setItem('current_cart', JSON.stringify(currentCart));
+              }
               
-              // دالة مساعدة لجلب بيانات المنتج
-              function getProductData() {
+              // جلب بيانات المنتج الحالي من الصفحة
+              function getCurrentProductData() {
                 try {
                   const productElement = document.querySelector('[data-product]');
-                  if(productElement) {
+                  if (productElement) {
                     return {
                       id: productElement.dataset.productId,
                       name: productElement.dataset.productName,
                       price: parseFloat(productElement.dataset.productPrice)
                     };
                   }
-                } catch(e) { console.error(e); }
+                } catch (e) {
+                  console.error('Error getting product data:', e);
+                }
                 return null;
               }
               
-              // دالة مساعدة لجلب بيانات الطلب
-              function getOrderData() {
+              // جلب بيانات الطلب الحالي من صفحة التأكيد
+              function getCurrentOrderData() {
                 try {
                   const orderElement = document.querySelector('[data-order]');
-                  if(orderElement) {
+                  if (orderElement) {
                     return {
+                      id: orderElement.dataset.orderId,
                       total: parseFloat(orderElement.dataset.orderTotal),
                       products: JSON.parse(orderElement.dataset.orderProducts)
                     };
                   }
-                } catch(e) { console.error(e); }
+                } catch (e) {
+                  console.error('Error getting order data:', e);
+                }
                 return null;
               }
+              
+              // جلب بيانات السلة الحالية
+              function getCurrentCartData() {
+                try {
+                  const cartElement = document.querySelector('[data-cart]');
+                  if (cartElement) {
+                    return {
+                      items: JSON.parse(cartElement.dataset.cartItems),
+                      total: parseFloat(cartElement.dataset.cartTotal)
+                    };
+                  }
+                  // Fallback إلى بيانات الجلسة
+                  return JSON.parse(sessionStorage.getItem('current_cart'));
+                } catch (e) {
+                  console.error('Error getting cart data:', e);
+                }
+                return null;
+              }
+              
+              // ===== معالجة أحداث الصفحات =====
+              
+              document.addEventListener('DOMContentLoaded', function() {
+                // صفحة المنتج
+                if (window.location.pathname.includes('/product/')) {
+                  const product = getCurrentProductData();
+                  if (product) trackViewContent(product);
+                }
+                
+                // صفحة السلة
+                if (window.location.pathname.includes('/cart')) {
+                  const cart = getCurrentCartData();
+                  if (cart && cart.items.length > 0) {
+                    trackInitiateCheckout(cart);
+                  }
+                }
+                
+                // صفحة تأكيد الطلب
+                if (window.location.pathname.includes('/checkout/success')) {
+                  const order = getCurrentOrderData();
+                  if (order) {
+                    trackPurchase(order);
+                  }
+                }
+              });
             `
           }}
         />
