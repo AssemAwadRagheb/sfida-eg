@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const trackingConfig = {
-  fbPixelId: "667476426454833",
+const pixelConfig = {
+  id: "667476426454833",
   currency: "EGP"
 };
 
@@ -33,7 +33,7 @@ const FacebookPixel = () => {
   return (
     <>
       <Script
-        id="fb-pixel-core"
+        id="fb-pixel-init"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
@@ -54,43 +54,39 @@ const FacebookPixel = () => {
               s.parentNode.insertBefore(t,s)
             }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
             
-            fbq('init', '${trackingConfig.fbPixelId}');
+            fbq('init', '${pixelConfig.id}');
             fbq('track', 'PageView');
             
             // نظام متقدم لتخزين الأحداث
-            window._fbEventManager = {
-              queue: JSON.parse(sessionStorage.getItem('fb_pixel_queue') || '[]'),
+            window.fbPixelQueue = {
+              queue: JSON.parse(sessionStorage.getItem('fbPixelQueue') || '[]'),
               
-              pushEvent: function(eventName, eventParams) {
-                this.queue.push({eventName, eventParams});
-                sessionStorage.setItem('fb_pixel_queue', JSON.stringify(this.queue));
-                this.processQueue();
+              push: function(event) {
+                this.queue.push(event);
+                sessionStorage.setItem('fbPixelQueue', JSON.stringify(this.queue));
+                this.process();
               },
               
-              processQueue: function() {
+              process: function() {
                 if (typeof fbq !== 'function') return;
                 
                 this.queue.forEach((event, index) => {
-                  try {
-                    fbq('track', event.eventName, event.eventParams);
-                    this.queue.splice(index, 1);
-                    sessionStorage.setItem('fb_pixel_queue', JSON.stringify(this.queue));
-                  } catch (e) {
-                    console.error('FB Pixel Error:', e);
-                  }
+                  fbq('track', event.name, event.data);
+                  this.queue.splice(index, 1);
+                  sessionStorage.setItem('fbPixelQueue', JSON.stringify(this.queue));
                 });
               },
               
-              clearQueue: function() {
+              clear: function() {
                 this.queue = [];
-                sessionStorage.removeItem('fb_pixel_queue');
+                sessionStorage.removeItem('fbPixelQueue');
               }
             };
             
             // معالجة الأحداث المخزنة عند التحميل
             window.addEventListener('load', function() {
-              if (window._fbEventManager) {
-                window._fbEventManager.processQueue();
+              if (window.fbPixelQueue) {
+                window.fbPixelQueue.process();
               }
             });
           `
@@ -101,7 +97,7 @@ const FacebookPixel = () => {
           height="1"
           width="1"
           style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${trackingConfig.fbPixelId}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${pixelConfig.id}&ev=PageView&noscript=1`}
         />
       </noscript>
     </>
@@ -113,13 +109,6 @@ export default function RootLayout({ children }) {
     <html lang="ar" dir="rtl">
       <head>
         <FacebookPixel />
-        <Script
-          id="chatbase-script"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="-3UT4U5z4KZOGu7TF8rxt";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();`,
-          }}
-        />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}>
         <Navbar />
@@ -128,51 +117,58 @@ export default function RootLayout({ children }) {
         <ToastContainer />
         
         <Script
-          id="fb-pixel-events-handler"
+          id="fb-pixel-events"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              // ===== نظام تتبع الأحداث الرئيسي =====
-              
-              // تتبع إضافة منتج للسلة
+              // دالة لتتبع إضافة منتج للسلة
               function trackAddToCart(product) {
                 const eventData = {
                   content_ids: [product.id],
                   content_name: product.name,
                   content_type: 'product',
                   value: product.price,
-                  currency: '${trackingConfig.currency}',
+                  currency: '${pixelConfig.currency}',
                   quantity: product.quantity || 1
                 };
                 
-                if (window._fbEventManager) {
-                  window._fbEventManager.pushEvent('AddToCart', eventData);
+                if (window.fbPixelQueue) {
+                  window.fbPixelQueue.push({
+                    name: 'AddToCart',
+                    data: eventData
+                  });
                 }
                 
-                // تحديث بيانات السلة في الجلسة
+                // حفظ بيانات السلة في الجلسة
                 updateCartInSession(product);
               }
               
-              // تتبع بدء عملية الدفع
-              function trackInitiateCheckout(cart) {
+              // دالة لتتبع بدء الدفع
+              function trackInitiateCheckout() {
+                const cart = getCartFromSession();
+                if (!cart || cart.items.length === 0) return;
+                
                 const eventData = {
                   content_ids: cart.items.map(item => item.id),
                   content_type: 'product',
                   value: cart.total,
-                  currency: '${trackingConfig.currency}',
-                  num_items: cart.items.reduce((total, item) => total + item.quantity, 0)
+                  currency: '${pixelConfig.currency}',
+                  num_items: cart.items.reduce((sum, item) => sum + item.quantity, 0)
                 };
                 
-                if (window._fbEventManager) {
-                  window._fbEventManager.pushEvent('InitiateCheckout', eventData);
+                if (window.fbPixelQueue) {
+                  window.fbPixelQueue.push({
+                    name: 'InitiateCheckout',
+                    data: eventData
+                  });
                 }
               }
               
-              // تتبع إتمام الشراء
+              // دالة لتتبع إتمام الشراء
               function trackPurchase(order) {
                 const eventData = {
                   value: order.total,
-                  currency: '${trackingConfig.currency}',
+                  currency: '${pixelConfig.currency}',
                   contents: order.products.map(p => ({
                     id: p.id,
                     quantity: p.quantity
@@ -181,43 +177,28 @@ export default function RootLayout({ children }) {
                   order_id: order.id || 'ORDER_' + Date.now()
                 };
                 
-                if (window._fbEventManager) {
-                  window._fbEventManager.pushEvent('Purchase', eventData);
-                  window._fbEventManager.clearQueue();
+                if (window.fbPixelQueue) {
+                  window.fbPixelQueue.push({
+                    name: 'Purchase',
+                    data: eventData
+                  });
+                  window.fbPixelQueue.clear();
                 }
                 
                 // مسح بيانات السلة بعد الشراء
-                sessionStorage.removeItem('current_cart');
-              }
-              
-              // تتبع مشاهدة المنتج
-              function trackViewContent(product) {
-                const eventData = {
-                  content_ids: [product.id],
-                  content_name: product.name,
-                  content_type: 'product',
-                  value: product.price,
-                  currency: '${trackingConfig.currency}'
-                };
-                
-                if (window._fbEventManager) {
-                  window._fbEventManager.pushEvent('ViewContent', eventData);
-                }
+                sessionStorage.removeItem('currentCart');
               }
               
               // ===== دوال مساعدة =====
               
-              // تحديث بيانات السلة في الجلسة
               function updateCartInSession(product) {
-                const currentCart = JSON.parse(sessionStorage.getItem('current_cart') || '{"items":[],"total":0}');
+                const cart = JSON.parse(sessionStorage.getItem('currentCart') || '{"items":[],"total":0}');
                 
-                // البحث عن المنتج في السلة
-                const existingItem = currentCart.items.find(item => item.id === product.id);
-                
+                const existingItem = cart.items.find(item => item.id === product.id);
                 if (existingItem) {
                   existingItem.quantity += product.quantity || 1;
                 } else {
-                  currentCart.items.push({
+                  cart.items.push({
                     id: product.id,
                     name: product.name,
                     price: product.price,
@@ -225,33 +206,36 @@ export default function RootLayout({ children }) {
                   });
                 }
                 
-                // حساب الإجمالي
-                currentCart.total = currentCart.items.reduce(
-                  (sum, item) => sum + (item.price * item.quantity), 0
-                );
-                
-                sessionStorage.setItem('current_cart', JSON.stringify(currentCart));
+                cart.total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                sessionStorage.setItem('currentCart', JSON.stringify(cart));
               }
               
-              // جلب بيانات المنتج الحالي من الصفحة
-              function getCurrentProductData() {
+              function getCartFromSession() {
                 try {
-                  const productElement = document.querySelector('[data-product]');
-                  if (productElement) {
-                    return {
-                      id: productElement.dataset.productId,
-                      name: productElement.dataset.productName,
-                      price: parseFloat(productElement.dataset.productPrice)
-                    };
-                  }
+                  return JSON.parse(sessionStorage.getItem('currentCart'));
                 } catch (e) {
-                  console.error('Error getting product data:', e);
+                  return null;
                 }
-                return null;
               }
               
-              // جلب بيانات الطلب الحالي من صفحة التأكيد
-              function getCurrentOrderData() {
+              // ===== التتبع التلقائي للصفحات =====
+              
+              document.addEventListener('DOMContentLoaded', function() {
+                // تتبع صفحة السلة
+                if (window.location.pathname.includes('/cart')) {
+                  trackInitiateCheckout();
+                }
+                
+                // تتبع صفحة تأكيد الطلب
+                if (window.location.pathname.includes('/checkout/success')) {
+                  const orderData = getOrderDataFromPage();
+                  if (orderData) {
+                    trackPurchase(orderData);
+                  }
+                }
+              });
+              
+              function getOrderDataFromPage() {
                 try {
                   const orderElement = document.querySelector('[data-order]');
                   if (orderElement) {
@@ -266,50 +250,6 @@ export default function RootLayout({ children }) {
                 }
                 return null;
               }
-              
-              // جلب بيانات السلة الحالية
-              function getCurrentCartData() {
-                try {
-                  const cartElement = document.querySelector('[data-cart]');
-                  if (cartElement) {
-                    return {
-                      items: JSON.parse(cartElement.dataset.cartItems),
-                      total: parseFloat(cartElement.dataset.cartTotal)
-                    };
-                  }
-                  // Fallback إلى بيانات الجلسة
-                  return JSON.parse(sessionStorage.getItem('current_cart'));
-                } catch (e) {
-                  console.error('Error getting cart data:', e);
-                }
-                return null;
-              }
-              
-              // ===== معالجة أحداث الصفحات =====
-              
-              document.addEventListener('DOMContentLoaded', function() {
-                // صفحة المنتج
-                if (window.location.pathname.includes('/product/')) {
-                  const product = getCurrentProductData();
-                  if (product) trackViewContent(product);
-                }
-                
-                // صفحة السلة
-                if (window.location.pathname.includes('/cart')) {
-                  const cart = getCurrentCartData();
-                  if (cart && cart.items.length > 0) {
-                    trackInitiateCheckout(cart);
-                  }
-                }
-                
-                // صفحة تأكيد الطلب
-                if (window.location.pathname.includes('/checkout/success')) {
-                  const order = getCurrentOrderData();
-                  if (order) {
-                    trackPurchase(order);
-                  }
-                }
-              });
             `
           }}
         />
